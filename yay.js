@@ -97,3 +97,5 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 //after running on terminal, test with:
 //http://localhost:3000/api/bus-arrival/83139
+
+//for everything else, rmb to use yay.js for start command
