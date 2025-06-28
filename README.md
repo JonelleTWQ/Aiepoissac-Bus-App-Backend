@@ -1,7 +1,110 @@
 # Aiepoissac Bus App Backend
 
-This was built with Node.js, Express, and MongoDB, then deployed on Render.
+This was built with Node.js, Express, and MongoDB Atlas, then deployed on Render.
+
+And YouTube videos. I'm really hoping it works. Do let me know if it doesn't!
 
 URL:
-https://aiepoissac-bus-backend.onrender.com/
+https://aiepoissac-bus-app-backend.onrender.com/
+
+
+# ========== (1) REGISTER A NEW USER ==========
+POST /api/register
+
+Body:
+{
+  "username": "user123",
+  "password": "password123"
+}
+
+What it's supposed to do:
+* If the username is new, it creates the account and returns: "You registered successfully!"
+* If username already exists, then there will be an error.
+
+
+# ========== (2) LOGIN ==========
+POST /api/login
+
+Body:
+{
+  "username": "user123",
+  "password": "password123"
+}
+
+What it's supposed to do:
+* If the password/user is incorrect, there will be an error.
+* If login is successful, there will be a message 'Login successful!'.
+Also, "userId" will be the user ID of this person.
+Only use "userId" after login!
+
+
+# ========== (3) GETS USER INFO ==========
+GET /api/users/:userId
+
+What it's supposed to do:
+* Return a user’s stored info.
+
+
+# ========== (4) SAVE FAVOURITE BUS STOP ==========
+POST /api/preferences
+
+Body:
+{
+  "userId": "user123",
+  "favBusStop": "83139"
+}
+
+What it's supposed to do:
+* Save a user's favourited bus stop.
+(If I understand correctly, only one favourite is supported per user. If a user favourites a new stop, it replaces the old one.)
+
+
+# ========== (5) GET FAVOURITE BUS STOP ==========
+GET /api/preferences/:userId
+
+What it's supposed to do:
+* Get a user's favourite bus stop.
+
+
+# ========== (6) SAVE A JOURNEY UNDER A PERSON ==========
+POST /api/journeys
+
+Body:
+{
+  "userId": "student123",
+  "journeyName": "Home to NUS",
+  "segments": [
+    {
+      "serviceNo": "151",
+      "originStopCode": "83139",
+      "destinationStopCode": "45009"
+    },
+    {
+      "serviceNo": "95",
+      "originStopCode": "45009",
+      "destinationStopCode": "27009"
+    }
+  ]
+}
+
+What it's supposed to do:
+* Save the journey under the person.
+(Not sure about renaming yet!)
+
+
+# ========== (7) GET USER'S JOURNEYS ==========
+GET /api/journeys/:userId
+
+What it's supposed to do:
+* Get all of this person's journeys.
+
+
+# ========== (8) DELETE JOURNEY ==========
+DELETE /api/journeys/:id
+
+What it's supposed to do:
+* Deletes a journey
+
+#
+If anything breaks or doesn’t work, do let me know! :D
 

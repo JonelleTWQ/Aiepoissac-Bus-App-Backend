@@ -3,11 +3,13 @@ https://www.youtube.com/watch?v=pkg0J6lpKT4&list=PL_c9BZzLwBRKWfmG3DTZ49tDV6Mn7G
 
 mkdir = make directory
 cd = change directory
+.md = markdown
 
 All things git:
 .gitignore is used to tell git what files to not put into Version Control (?) not sure how to use it
-git add
-git commit
+git add . = "Track all the changes I made, including new files or edits."
+git commit -m "blablabla" = "Save my changes and add this description."
+git push origin main = "Upload my stuff to GitHub, on the 'main' branch."
 
 
 IMPT!!
