@@ -8,3 +8,7 @@ All things git:
 .gitignore is used to tell git what files to not put into Version Control (?) not sure how to use it
 git add
 git commit
+
+
+IMPT!!
+In MongoDB Atlas, rmb to change network access!!
