@@ -46,7 +46,7 @@ app.get('/api/bus-arrival/:busStopCode', async (req, res) => {
 // User routes //
 /////////////////
 
-app.post('/api/users', async (req, res) => {
+/* app.post('/api/users', async (req, res) => {
   const { userId, name, email } = req.body;
   const user = await User.findOneAndUpdate({ userId }, { name, email }, { upsert: true, new: true });
   res.json(user);
@@ -55,6 +55,11 @@ app.get('/api/users/:userId', async (req, res) => {
   const user = await User.findOne({ userId: req.params.userId });
   res.json(user || {});
 });
+
+Note: Ignore these!
+
+*/
+
 
 /////////////////
 // Preferences //
@@ -75,29 +80,243 @@ app.get('/api/preferences/:userId', async (req, res) => {
 //////////////
 
 app.post('/api/journeys', async (req, res) => {
-  const { userId, journeyName, segments } = req.body;
+  const { userId, journeyID, description, segments } = req.body;
+
+  if (!userId || !journeyID || !description) {
+    return res.status(400).json({ error: "userId, journeyID, and description are required." });
+  }
+
   if (!Array.isArray(segments) || segments.length === 0) {
     return res.status(400).json({ error: "A journey must have at least one segment." });
   }
+
+  const invalid = segments.some(s =>
+    typeof s.sequence !== 'number' ||
+    !s.serviceNo ||
+    typeof s.direction !== 'number' ||
+    typeof s.originBusStopSequence !== 'number' ||
+    typeof s.destinationBusStopSequence !== 'number'
+  );
+  if (invalid) {
+    return res.status(400).json({ error: "One or more segments are missing required fields." });
+  }
+
   try {
-    const newJourney = await Journey.create({ userId, journeyName, segments });
+    const newJourney = await Journey.create({ userId, journeyID, description, segments });
     res.json(newJourney);
   } catch (err) {
     console.error(err);
+    // duplicate key error if same journeyID is re-used
+    if (err.code === 11000) {
+      return res.status(409).json({ error: "journeyID already exists" });
+    }
     res.status(500).json({ error: "Couldn't save journey!" });
   }
 });
 
-app.get('/api/journeys/:userId', async (req, res) => {
-  const journeys = await Journey.find({ userId: req.params.userId });
-  res.json(journeys);
+
+// RENAME A JOURNEY AND/OR REPLACE ITS SEGMENTS
+// PATCH /api/journeys/:id   (Mongo _id)
+app.patch('/api/journeys/:id', async (req, res) => {
+  const { description, segments } = req.body;
+
+  // if segments are provided, validate them
+  if (segments) {
+    if (!Array.isArray(segments) || segments.length === 0) {
+      return res.status(400).json({ error: "segments must be a non-empty array if provided." });
+    }
+
+    const invalid = segments.some(s =>
+      typeof s.sequence !== 'number' ||
+      !s.serviceNo ||
+      typeof s.direction !== 'number' ||
+      typeof s.originBusStopSequence !== 'number' ||
+      typeof s.destinationBusStopSequence !== 'number'
+    );
+    if (invalid) {
+      return res.status(400).json({ error: "One or more segments are missing required fields." });
+    }
+  }
+
+  try {
+    const update = {};
+    if (description != null) update.description = description;
+    if (segments != null) update.segments = segments;
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ error: "Provide at least one of: description or segments." });
+    }
+
+    const updated = await Journey.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Journey not found" });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't update journey!" });
+  }
 });
 
-app.delete('/api/journeys/:id', async (req, res) => {
-  const deleted = await Journey.findByIdAndDelete(req.params.id);
-  if (deleted) res.json({ message: 'Journey deleted' });
-  else res.status(404).json({ error: 'Not found' });
+
+// REPLACE ONLY SEGMENTS
+// PATCH /api/journeys/:id/segments
+app.patch('/api/journeys/:id/segments', async (req, res) => {
+  const { segments } = req.body;
+
+  if (!Array.isArray(segments) || segments.length === 0) {
+    return res.status(400).json({ error: "segments must be a non-empty array." });
+  }
+
+  const invalid = segments.some(s =>
+    typeof s.sequence !== 'number' ||
+    !s.serviceNo ||
+    typeof s.direction !== 'number' ||
+    typeof s.originBusStopSequence !== 'number' ||
+    typeof s.destinationBusStopSequence !== 'number'
+  );
+  if (invalid) {
+    return res.status(400).json({ error: "One or more segments are missing required fields." });
+  }
+
+  try {
+    const updated = await Journey.findByIdAndUpdate(
+      req.params.id,
+      { $set: { segments } },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Journey not found" });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't update segments!" });
+  }
 });
+
+
+////////////////////////////////////
+// Journey endpoints by journeyID //
+////////////////////////////////////
+
+// GET one journey by its journeyID
+app.get('/api/journeys/by-journey-id/:journeyID', async (req, res) => {
+  try {
+    const j = await Journey.findOne({ journeyID: req.params.journeyID });
+    if (!j) return res.status(404).json({ error: "Journey not found" });
+    res.json(j);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't fetch journey!" });
+  }
+});
+
+// PATCH (rename and/or replace segments) by journeyID
+app.patch('/api/journeys/by-journey-id/:journeyID', async (req, res) => {
+  const { description, segments } = req.body;
+
+  // validate segments if provided
+  if (segments) {
+    if (!Array.isArray(segments) || segments.length === 0) {
+      return res.status(400).json({ error: "segments must be a non-empty array if provided." });
+    }
+
+    const invalid = segments.some(s =>
+      typeof s.sequence !== 'number' ||
+      !s.serviceNo ||
+      typeof s.direction !== 'number' ||
+      typeof s.originBusStopSequence !== 'number' ||
+      typeof s.destinationBusStopSequence !== 'number'
+    );
+    if (invalid) {
+      return res.status(400).json({ error: "One or more segments are missing required fields." });
+    }
+  }
+
+  try {
+    const update = {};
+    if (description != null) update.description = description;
+    if (segments != null) update.segments = segments;
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ error: "Provide at least one of: description or segments." });
+    }
+
+    const updated = await Journey.findOneAndUpdate(
+      { journeyID: req.params.journeyID },
+      { $set: update },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Journey not found" });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't update journey!" });
+  }
+});
+
+// REPLACE ONLY SEGMENTS by journeyID
+app.patch('/api/journeys/by-journey-id/:journeyID/segments', async (req, res) => {
+  const { segments } = req.body;
+
+  if (!Array.isArray(segments) || segments.length === 0) {
+    return res.status(400).json({ error: "segments must be a non-empty array." });
+  }
+
+  const invalid = segments.some(s =>
+    typeof s.sequence !== 'number' ||
+    !s.serviceNo ||
+    typeof s.direction !== 'number' ||
+    typeof s.originBusStopSequence !== 'number' ||
+    typeof s.destinationBusStopSequence !== 'number'
+  );
+  if (invalid) {
+    return res.status(400).json({ error: "One or more segments are missing required fields." });
+  }
+
+  try {
+    const updated = await Journey.findOneAndUpdate(
+      { journeyID: req.params.journeyID },
+      { $set: { segments } },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Journey not found" });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't update segments!" });
+  }
+});
+
+// DELETE by journeyID
+app.delete('/api/journeys/by-journey-id/:journeyID', async (req, res) => {
+  try {
+    const deleted = await Journey.findOneAndDelete({ journeyID: req.params.journeyID });
+    if (!deleted) return res.status(404).json({ error: "Journey not found" });
+    res.json({ message: 'Journey deleted' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't delete journey!" });
+  }
+});
+
 
 ///////////////
 // Get thing //

@@ -38,14 +38,7 @@ Also, "userId" will be the user ID of this person.
 Only use "userId" after login!
 
 
-# ========== (3) GETS USER INFO ==========
-GET /api/users/:userId
-
-What it's supposed to do:
-* Return a user’s stored info.
-
-
-# ========== (4) SAVE FAVOURITE BUS STOP ==========
+# ========== (3) SAVE FAVOURITE BUS STOP ==========
 POST /api/preferences
 
 Body:
@@ -59,47 +52,109 @@ What it's supposed to do:
 (If I understand correctly, only one favourite is supported per user. If a user favourites a new stop, it replaces the old one.)
 
 
-# ========== (5) GET FAVOURITE BUS STOP ==========
+# ========== (4) GET FAVOURITE BUS STOP ==========
 GET /api/preferences/:userId
 
 What it's supposed to do:
 * Get a user's favourite bus stop.
 
 
-# ========== (6) SAVE A JOURNEY UNDER A PERSON ==========
+# ========== (5) SAVE A JOURNEY UNDER A PERSON ==========
 POST /api/journeys
 
 Body:
 {
   "userId": "student123",
-  "journeyName": "Home to NUS",
+  "journeyID": "abc123",
+  "description": "Home to NUS",
   "segments": [
     {
+      "sequence": 1,
       "serviceNo": "151",
-      "originStopCode": "83139",
-      "destinationStopCode": "45009"
+      "direction": 1,
+      "originBusStopSequence": 12,
+      "destinationBusStopSequence": 24
     },
     {
+      "sequence": 2,
       "serviceNo": "95",
-      "originStopCode": "45009",
-      "destinationStopCode": "27009"
+      "direction": 1,
+      "originBusStopSequence": 5,
+      "destinationBusStopSequence": 17
     }
   ]
 }
 
 What it's supposed to do:
 * Save the journey under the person.
-(Not sure about renaming yet!)
+
+# ========== (5.1) Rename a journey and/or replace segments ==========
+PATCH /api/journeys/:id
+Body:
+{
+  "description": "Home to Work (fastest)",
+  "segments": [
+    {
+      "sequence": 1,
+      "serviceNo": "151",
+      "direction": 1,
+      "originBusStopSequence": 12,
+      "destinationBusStopSequence": 24
+    }
+  ]
+}
+
+Note: :id here is the MongoDB _id, not journeyID.
 
 
-# ========== (7) GET USER'S JOURNEYS ==========
+# ========== (5.2) Replace only the segments ==========
+PATCH /api/journeys/:id/segments
+
+Body:
+{
+  "segments": [
+    {
+      "sequence": 1,
+      "serviceNo": "95",
+      "direction": 1,
+      "originBusStopSequence": 5,
+      "destinationBusStopSequence": 17
+    },
+    {
+      "sequence": 2,
+      "serviceNo": "151",
+      "direction": 2,
+      "originBusStopSequence": 20,
+      "destinationBusStopSequence": 33
+    }
+  ]
+}
+
+
+# ========== (5.3) Get a journey (by journeyID) ==========
+GET /api/journeys/by-journey-id/:journeyID
+
+
+# ========== (5.4) Rename/replace (by journeyID) ==========
+PATCH /api/journeys/by-journey-id/:journeyID
+
+
+# ========== (5.5) Replace segments only (by journeyID) ==========
+PATCH /api/journeys/by-journey-id/:journeyID/segments
+
+
+# ========== (5.6) Delete a journey (by journeyID) ==========
+DELETE /api/journeys/by-journey-id/:journeyID
+
+
+# ========== (6) GET USER'S JOURNEYS ==========
 GET /api/journeys/:userId
 
 What it's supposed to do:
 * Get all of this person's journeys.
 
 
-# ========== (8) DELETE JOURNEY ==========
+# ========== (7) DELETE JOURNEY ==========
 DELETE /api/journeys/:id
 
 What it's supposed to do:
