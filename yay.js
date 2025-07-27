@@ -129,6 +129,17 @@ app.get('/api/preferences/:userId', async (req, res) => {
 // Journeys //
 //////////////
 
+// helper!
+function validateSegmentPayload(s) {
+  return (
+    typeof s.sequence === 'number' &&
+    s.serviceNo &&
+    typeof s.direction === 'number' &&
+    typeof s.originBusStopSequence === 'number' &&
+    typeof s.destinationBusStopSequence === 'number'
+  );
+}
+
 app.post('/api/journeys', async (req, res) => {
   const { userId, journeyID, description, segments } = req.body;
 
@@ -373,6 +384,141 @@ app.delete('/api/journeys/by-journey-id/:journeyID', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Couldn't delete journey!" });
+  }
+});
+
+
+//////////////////////////////////////////////
+// Journey SEGMENT endpoints (by journeyID) //
+//////////////////////////////////////////////
+
+// 9.1 INSERT a new segment
+app.post('/api/journeys/:journeyID/segments', async (req, res) => {
+  const { journeyID } = req.params;
+  const segment = req.body;
+
+  if (!validateSegmentPayload(segment)) {
+    return res.status(400).json({ error: 'Segment missing required fields.' });
+  }
+
+  try {
+    const journey = await Journey.findOne({ journeyID });
+    if (!journey) return res.status(404).json({ error: 'Journey not found' });
+
+    if (journey.segments.some(s => s.sequence === segment.sequence)) {
+      return res.status(409).json({ error: 'Segment with this sequence already exists.' });
+    }
+
+    journey.segments.push({ ...segment, journeyID });
+    await journey.save();
+    res.json(journey);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't insert segment!" });
+  }
+});
+
+// 9.2 UPDATE a single segment (by sequence)
+app.patch('/api/journeys/:journeyID/segments/:sequence', async (req, res) => {
+  const { journeyID, sequence } = req.params;
+  const payload = req.body;
+
+  const fields = ['serviceNo', 'direction', 'originBusStopSequence', 'destinationBusStopSequence'];
+  const invalid =
+    Object.keys(payload).some(k => !fields.includes(k)) ||
+    (payload.direction != null && typeof payload.direction !== 'number') ||
+    (payload.originBusStopSequence != null && typeof payload.originBusStopSequence !== 'number') ||
+    (payload.destinationBusStopSequence != null && typeof payload.destinationBusStopSequence !== 'number');
+
+  if (invalid) {
+    return res.status(400).json({ error: 'Invalid fields in payload.' });
+  }
+
+  try {
+    const journey = await Journey.findOne({ journeyID });
+    if (!journey) return res.status(404).json({ error: 'Journey not found' });
+
+    const seq = Number(sequence);
+    const idx = journey.segments.findIndex(s => s.sequence === seq);
+    if (idx === -1) return res.status(404).json({ error: 'Segment not found' });
+
+    journey.segments[idx] = {
+      ...journey.segments[idx],
+      ...payload,
+      journeyID
+    };
+
+    await journey.save();
+    res.json(journey);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't update segment!" });
+  }
+});
+
+// 9.3 DELETE a single segment (by sequence)
+app.delete('/api/journeys/:journeyID/segments/:sequence', async (req, res) => {
+  const { journeyID, sequence } = req.params;
+
+  try {
+    const journey = await Journey.findOne({ journeyID });
+    if (!journey) return res.status(404).json({ error: 'Journey not found' });
+
+    const seq = Number(sequence);
+    const before = journey.segments.length;
+    journey.segments = journey.segments.filter(s => s.sequence !== seq);
+
+    if (journey.segments.length === before) {
+      return res.status(404).json({ error: 'Segment not found' });
+    }
+
+    await journey.save({ validateModifiedOnly: true }).catch(async () => {
+      await Journey.updateOne(
+        { journeyID },
+        { $set: { segments: journey.segments } },
+        { runValidators: false }
+      );
+    });
+
+    res.json(journey);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't delete segment!" });
+  }
+});
+
+// 9.4 DELETE all segments in a journey
+app.delete('/api/journeys/:journeyID/segments', async (req, res) => {
+  const { journeyID } = req.params;
+
+  try {
+    const updated = await Journey.findOneAndUpdate(
+      { journeyID },
+      { $set: { segments: [] } },
+      { new: true, runValidators: false }
+    );
+
+    if (!updated) return res.status(404).json({ error: 'Journey not found' });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't delete all segments!" });
+  }
+});
+
+// 9.5 GET all segments of a journey
+app.get('/api/journeys/:journeyID/segments', async (req, res) => {
+  const { journeyID } = req.params;
+
+  try {
+    const journey = await Journey.findOne({ journeyID });
+    if (!journey) return res.status(404).json({ error: 'Journey not found' });
+
+    res.json(journey.segments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't get segments!" });
   }
 });
 

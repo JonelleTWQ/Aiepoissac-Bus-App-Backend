@@ -88,7 +88,7 @@ Body:
 What it's supposed to do:
 * Save the journey under the person.
 
-# ========== (5.1) Rename a journey and/or replace segments ==========
+### 5.1 Rename a journey and/or replace segments
 PATCH /api/journeys/:id
 Body:
 {
@@ -107,7 +107,7 @@ Body:
 Note: :id here is the MongoDB _id, not journeyID.
 
 
-# ========== (5.2) Replace only the segments ==========
+### 5.2 Replace only the segments 
 PATCH /api/journeys/:id/segments
 
 Body:
@@ -131,7 +131,7 @@ Body:
 }
 
 
-# ========== (5.3) Get a journey (by journeyID) ==========
+### 5.3 Get a journey (by journeyID)
 GET /api/journeys/by-journey-id/:journeyID
 
 
@@ -208,12 +208,54 @@ GET /api/lta/bus-routes?skip=0
 ---
 
 ### 8.3 Get all bus services  
-**GET /api/lta/bus-services?skip=0**
+GET /api/lta/bus-services?skip=0
 
 - Query parameter: `skip` (optional).
 - Example:  
   `https://aiepoissac-bus-app-backend.onrender.com/api/lta/bus-services?skip=0`
 
+
+# ========== (9) JOURNEY SEGMENTS ==========
+
+### 9.1 Add a new segment to a journey
+POST /api/journeys/:journeyID/segments
+
+Body:
+{
+  "sequence": 3,
+  "serviceNo": "14",
+  "direction": 1,
+  "originBusStopSequence": 10,
+  "destinationBusStopSequence": 20
+}
+
+---
+
+### 9.2 Update an existing segment
+PATCH /api/journeys/:journeyID/segments/:sequence
+
+Body:
+{
+  "serviceNo": "14",
+  "direction": 2,
+  "originBusStopSequence": 15,
+  "destinationBusStopSequence": 25
+}
+
+---
+
+### 9.3 Delete one segment
+DELETE /api/journeys/:journeyID/segments/:sequence
+
+---
+
+### 9.4 Delete all segments in a journey
+DELETE /api/journeys/:journeyID/segments
+
+---
+
+### 9.5 Get all segments of a journey
+GET /api/journeys/:journeyID/segments
 
 
 #
