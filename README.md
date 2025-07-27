@@ -160,6 +160,42 @@ DELETE /api/journeys/:id
 What it's supposed to do:
 * Deletes a journey
 
+
+# ========== (8) LTA STATIC DATA PROXIES ==========
+
+These endpoints act as a "middleman" for the LTA DataMall API.  
+The mobile app can call these instead of calling the LTA API directly.  
+This way, the AccountKey remains safe in our backend, and the mobile app doesn't need to store it.
+
+---
+
+### 8.1 Get all bus stops  
+GET /api/lta/bus-stops?skip=0
+
+- Query parameter: `skip` (optional) – tells LTA how many records to skip (used for pagination).
+- Example:  
+  `https://aiepoissac-bus-app-backend.onrender.com/api/lta/bus-stops?skip=0`
+
+---
+
+### 8.2 Get all bus routes  
+GET /api/lta/bus-routes?skip=0
+
+- Query parameter: `skip` (optional).
+- Example:  
+  `https://aiepoissac-bus-app-backend.onrender.com/api/lta/bus-routes?skip=0`
+
+---
+
+### 8.3 Get all bus services  
+**GET /api/lta/bus-services?skip=0**
+
+- Query parameter: `skip` (optional).
+- Example:  
+  `https://aiepoissac-bus-app-backend.onrender.com/api/lta/bus-services?skip=0`
+
+
+
 #
 If anything breaks or doesn’t work, do let me know! :D
 
