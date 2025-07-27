@@ -142,6 +142,26 @@ PATCH /api/journeys/by-journey-id/:journeyID
 # ========== (5.5) Replace segments only (by journeyID) ==========
 PATCH /api/journeys/by-journey-id/:journeyID/segments
 
+Body:
+{
+  "segments": [
+    {
+      "sequence": 1,
+      "serviceNo": "95",
+      "direction": 1,
+      "originBusStopSequence": 5,
+      "destinationBusStopSequence": 17
+    },
+    {
+      "sequence": 2,
+      "serviceNo": "151",
+      "direction": 2,
+      "originBusStopSequence": 20,
+      "destinationBusStopSequence": 33
+    }
+  ]
+}
+
 
 # ========== (5.6) Delete a journey (by journeyID) ==========
 DELETE /api/journeys/by-journey-id/:journeyID

@@ -1,18 +1,18 @@
 const mongoose = require('mongoose');
 
 const SegmentSchema = new mongoose.Schema({
+  journeyID: { type: String, required: true },
   sequence: { type: Number, required: true },              // order inside the journey
   serviceNo: { type: String, required: true },
   direction: { type: Number, required: true },
   originBusStopSequence: { type: Number, required: true },
   destinationBusStopSequence: { type: Number, required: true }
 }, { _id: false });
-// each segment has service number, direction, and origin/destination stop sequence
 
 
 const JourneySchema = new mongoose.Schema({
   userId: { type: String, required: true },
-  journeyID: { type: String, required: true, unique: true },
+  journeyID: { type: String, required: true, unique: true }, // still unique at the journey level
   description: { type: String, required: true },
   segments: {
     type: [SegmentSchema],
@@ -20,7 +20,5 @@ const JourneySchema = new mongoose.Schema({
   },
   savedAt: { type: Date, default: Date.now }
 });
-// then each saved journey has segments
-// and the journey is saved to the user id
 
 module.exports = mongoose.model('Journey', JourneySchema);

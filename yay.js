@@ -152,7 +152,9 @@ app.post('/api/journeys', async (req, res) => {
   }
 
   try {
-    const newJourney = await Journey.create({ userId, journeyID, description, segments });
+    const segmentsWithJourneyID = segments.map(s => ({ ...s, journeyID }));
+    const newJourney = await Journey.create({ userId, journeyID, description, segments: segmentsWithJourneyID });
+
     res.json(newJourney);
   } catch (err) {
     console.error(err);
@@ -170,7 +172,6 @@ app.post('/api/journeys', async (req, res) => {
 app.patch('/api/journeys/:id', async (req, res) => {
   const { description, segments } = req.body;
 
-  // if segments are provided, validate them
   if (segments) {
     if (!Array.isArray(segments) || segments.length === 0) {
       return res.status(400).json({ error: "segments must be a non-empty array if provided." });
@@ -189,9 +190,16 @@ app.patch('/api/journeys/:id', async (req, res) => {
   }
 
   try {
+    const existing = await Journey.findById(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ error: "Journey not found" });
+    }
+
     const update = {};
     if (description != null) update.description = description;
-    if (segments != null) update.segments = segments;
+    if (segments != null) {
+      update.segments = segments.map(s => ({ ...s, journeyID: existing.journeyID }));
+    }
 
     if (Object.keys(update).length === 0) {
       return res.status(400).json({ error: "Provide at least one of: description or segments." });
@@ -203,16 +211,13 @@ app.patch('/api/journeys/:id', async (req, res) => {
       { new: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ error: "Journey not found" });
-    }
-
     res.json(updated);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Couldn't update journey!" });
   }
 });
+
 
 
 // REPLACE ONLY SEGMENTS
@@ -236,15 +241,18 @@ app.patch('/api/journeys/:id/segments', async (req, res) => {
   }
 
   try {
-    const updated = await Journey.findByIdAndUpdate(
-      req.params.id,
-      { $set: { segments } },
-      { new: true }
-    );
-
-    if (!updated) {
+    const existing = await Journey.findById(req.params.id);
+    if (!existing) {
       return res.status(404).json({ error: "Journey not found" });
     }
+
+    const segmentsWithJourneyID = segments.map(s => ({ ...s, journeyID: existing.journeyID }));
+
+    const updated = await Journey.findByIdAndUpdate(
+      req.params.id,
+      { $set: { segments: segmentsWithJourneyID } },
+      { new: true }
+    );
 
     res.json(updated);
   } catch (err) {
@@ -295,7 +303,7 @@ app.patch('/api/journeys/by-journey-id/:journeyID', async (req, res) => {
   try {
     const update = {};
     if (description != null) update.description = description;
-    if (segments != null) update.segments = segments;
+    if (segments != null) update.segments = segments.map(s => ({ ...s, journeyID: req.params.journeyID }));
 
     if (Object.keys(update).length === 0) {
       return res.status(400).json({ error: "Provide at least one of: description or segments." });
@@ -338,9 +346,10 @@ app.patch('/api/journeys/by-journey-id/:journeyID/segments', async (req, res) =>
   }
 
   try {
+    const segmentsWithJourneyID = segments.map(s => ({ ...s, journeyID: req.params.journeyID }));
     const updated = await Journey.findOneAndUpdate(
       { journeyID: req.params.journeyID },
-      { $set: { segments } },
+      { $set: { segments: segmentsWithJourneyID } },
       { new: true }
     );
 
