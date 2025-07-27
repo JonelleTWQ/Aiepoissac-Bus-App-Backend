@@ -42,6 +42,56 @@ app.get('/api/bus-arrival/:busStopCode', async (req, res) => {
   }
 });
 
+
+/////////////////////////////////////
+// LTA STATIC DATA PROXY ENDPOINTS //
+/////////////////////////////////////
+
+const LTA_BASE = 'https://datamall2.mytransport.sg/ltaodataservice';
+
+// GET /api/lta/bus-stops?skip=0
+app.get('/api/lta/bus-stops', async (req, res) => {
+  const skip = Number(req.query.skip) || 0;
+  try {
+    const { data } = await axios.get(`${LTA_BASE}/BusStops?$skip=${skip}`, {
+      headers: { AccountKey: process.env.LTA_API_KEY, accept: 'application/json' }
+    });
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch BusStops' });
+  }
+});
+
+// GET /api/lta/bus-routes?skip=0
+app.get('/api/lta/bus-routes', async (req, res) => {
+  const skip = Number(req.query.skip) || 0;
+  try {
+    const { data } = await axios.get(`${LTA_BASE}/BusRoutes?$skip=${skip}`, {
+      headers: { AccountKey: process.env.LTA_API_KEY, accept: 'application/json' }
+    });
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch BusRoutes' });
+  }
+});
+
+// GET /api/lta/bus-services?skip=0
+app.get('/api/lta/bus-services', async (req, res) => {
+  const skip = Number(req.query.skip) || 0;
+  try {
+    const { data } = await axios.get(`${LTA_BASE}/BusServices?$skip=${skip}`, {
+      headers: { AccountKey: process.env.LTA_API_KEY, accept: 'application/json' }
+    });
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch BusServices' });
+  }
+});
+
+
 /////////////////
 // User routes //
 /////////////////
