@@ -286,7 +286,7 @@ GET /api/mrt-stations
 ---
 
 ### 10.2 Insert a new MRT station (Admin only)
-POST /api/mrt-stations?key=[insert key here]
+POST /api/mrt-stations?key=[insert sPeCiAl key here]
 
 Body:
 {
@@ -300,12 +300,37 @@ Body:
 ---
 
 ### 10.3 Delete a MRT station by stationCode (Admin only)
-DELETE /api/mrt-stations/:stationCode?key=[insert key here]
+DELETE /api/mrt-stations/:stationCode?key=[insert sPeCiAl key here]
 
 e.g. DELETE /api/mrt-stations/FS1?key=[insert key here]
 
 ---
 
+
+# ========== (11) ANNOUNCEMENTS ==========
+
+### 11.1 Get all announcements
+GET /api/announcements
+
+Returns all announcements, latest first.
+
+---
+
+### 11.2 Add an announcement (Admin only)
+POST /api/announcements?key=[insert sPeCiAl key here]
+
+Body:
+{
+  "title": "New Feature",
+  "message": "We just added MRT station search!"
+}
+
+---
+
+### 11.3 Delete an announcement by ID (Admin only)
+DELETE /api/announcements/:id?key=[insert sPeCiAl key here]
+
+---
 
 #
 If anything breaks or doesn’t work, do let me know! :D

@@ -598,6 +598,63 @@ app.get('/api/journeys/:userId', async (req, res) => {
 });
 
 
+///////////////////
+// Announcements //
+///////////////////
+
+const Announcement = require('./models/Announcement');
+
+// 1. Get all announcements (latest first)
+app.get('/api/announcements', async (req, res) => {
+  try {
+    const announcements = await Announcement.find().sort({ createdAt: -1 });
+    res.json(announcements);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't fetch announcements!" });
+  }
+});
+
+// 2. Add an announcement (Admin only)
+app.post('/api/announcements', async (req, res) => {
+  const { key } = req.query;
+  if (key !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: "Forbidden: Invalid admin key >:(" });
+  }
+
+  const { title, message } = req.body;
+  if (!title || !message) {
+    return res.status(400).json({ error: "Title and message are required." });
+  }
+
+  try {
+    const announcement = await Announcement.create({ title, message });
+    res.status(201).json(announcement);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't create announcement! :(" });
+  }
+});
+
+// 3. Delete an announcement by ID (Admin only)
+app.delete('/api/announcements/:id', async (req, res) => {
+  const { key } = req.query;
+  if (key !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: "Forbidden: Invalid admin key >:(" });
+  }
+
+  try {
+    const deleted = await Announcement.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "Announcement not found :(" });
+    res.json({ message: "Announcement deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't delete announcement!" });
+  }
+});
+
+
+
 ///////////////
 // Get thing //
 ///////////////
