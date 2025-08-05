@@ -140,6 +140,7 @@ function validateSegmentPayload(s) {
   );
 }
 
+// CREATE a new journey (segments are optional now)
 app.post('/api/journeys', async (req, res) => {
   const { userId, journeyID, description, segments } = req.body;
 
@@ -147,24 +148,30 @@ app.post('/api/journeys', async (req, res) => {
     return res.status(400).json({ error: "userId, journeyID, and description are required." });
   }
 
-  if (!Array.isArray(segments) || segments.length === 0) {
-    return res.status(400).json({ error: "A journey must have at least one segment." });
+  // Segments are optional, but if provided, must be an array
+  if (segments && !Array.isArray(segments)) {
+    return res.status(400).json({ error: "Segments must be an array if provided." });
   }
 
-  const invalid = segments.some(s =>
+  // Validate each segment if provided
+  if (segments && segments.some(s =>
     typeof s.sequence !== 'number' ||
     !s.serviceNo ||
     typeof s.direction !== 'number' ||
     typeof s.originBusStopSequence !== 'number' ||
     typeof s.destinationBusStopSequence !== 'number'
-  );
-  if (invalid) {
+  )) {
     return res.status(400).json({ error: "One or more segments are missing required fields." });
   }
 
   try {
-    const segmentsWithJourneyID = segments.map(s => ({ ...s, journeyID }));
-    const newJourney = await Journey.create({ userId, journeyID, description, segments: segmentsWithJourneyID });
+    const segmentsWithJourneyID = (segments || []).map(s => ({ ...s, journeyID }));
+    const newJourney = await Journey.create({
+      userId,
+      journeyID,
+      description,
+      segments: segmentsWithJourneyID
+    });
 
     res.json(newJourney);
   } catch (err) {
@@ -519,6 +526,18 @@ app.get('/api/journeys/:journeyID/segments', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Couldn't get segments!" });
+  }
+});
+
+
+// 10. GET all journeys for a user
+app.get('/api/journeys/:userId', async (req, res) => {
+  try {
+    const journeys = await Journey.find({ userId: req.params.userId });
+    res.json(journeys);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't fetch journeys!" });
   }
 });
 

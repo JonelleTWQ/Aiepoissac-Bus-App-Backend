@@ -173,6 +173,8 @@ GET /api/journeys/:userId
 What it's supposed to do:
 * Get all of this person's journeys.
 
+(Update: found at line 526 of yay.js)
+
 
 # ========== (7) DELETE JOURNEY ==========
 DELETE /api/journeys/:id

@@ -15,8 +15,8 @@ const JourneySchema = new mongoose.Schema({
   journeyID: { type: String, required: true, unique: true }, // still unique at the journey level
   description: { type: String, required: true },
   segments: {
-    type: [SegmentSchema],
-    validate: v => Array.isArray(v) && v.length > 0
+  type: [SegmentSchema],
+  default: [] // allow empty journeys
   },
   savedAt: { type: Date, default: Date.now }
 });
