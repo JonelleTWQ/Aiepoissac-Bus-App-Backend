@@ -92,6 +92,62 @@ app.get('/api/lta/bus-services', async (req, res) => {
 });
 
 
+//////////////////////////
+// MRT Stations routes  //
+//////////////////////////
+
+const MRTStation = require('./models/MRTStation');
+
+// 1. GET all MRT stations
+app.get('/api/mrt-stations', async (req, res) => {
+  try {
+    const stations = await MRTStation.find({});
+    res.json(stations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't fetch MRT stations!" });
+  }
+});
+
+// 2. INSERT a new MRT station (requires ?key=YOUR_SECRET_KEY)
+app.post('/api/mrt-stations', async (req, res) => {
+  const apiKey = req.query.key;
+  if (apiKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: 'Forbidden: Invalid API key >:(' });
+  }
+
+  const { type, stationCode, stationName, latitude, longitude } = req.body;
+  if (!type || !stationCode || !stationName || latitude == null || longitude == null) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const newStation = await MRTStation.create({ type, stationCode, stationName, latitude, longitude });
+    res.json(newStation);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't insert MRT station!" });
+  }
+});
+
+// 3. DELETE a MRT station by stationCode (requires ?key=YOUR_SECRET_KEY)
+app.delete('/api/mrt-stations/:stationCode', async (req, res) => {
+  const apiKey = req.query.key;
+  if (apiKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: 'Forbidden: Invalid API key >:(' });
+  }
+
+  try {
+    const deleted = await MRTStation.findOneAndDelete({ stationCode: req.params.stationCode });
+    if (!deleted) return res.status(404).json({ error: 'Station not found' });
+    res.json({ message: 'Station deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't delete MRT station!" });
+  }
+});
+
+
 /////////////////
 // User routes //
 /////////////////
@@ -581,4 +637,35 @@ app.post('/api/login', async (req, res) => {
   const match = await bcrypt.compare(password, user.hashedPassword);
   if (!match) return res.status(401).json({ error: 'Wrong password!' });
   res.json({ message: 'Login successful!', userId: user._id });
+});
+
+//////////////////////////
+// Change User Password //
+//////////////////////////
+
+app.post('/api/change-password', async (req, res) => {
+  const { username, oldPassword, newPassword } = req.body;
+
+  if (!username || !oldPassword || !newPassword) {
+    return res.status(400).json({ error: 'username, oldPassword, and newPassword are required' });
+  }
+
+  try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ error: 'User not found :/' });
+
+    // Verify old password
+    const match = await bcrypt.compare(oldPassword, user.hashedPassword);
+    if (!match) return res.status(401).json({ error: 'Old password is incorrect! >:(' });
+
+    // Hash and update to new password
+    const newHashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    user.hashedPassword = newHashedPassword;
+    await user.save();
+
+    res.json({ message: 'Password changed successfully! :)' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to change password :(' });
+  }
 });

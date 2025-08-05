@@ -22,7 +22,7 @@ What it's supposed to do:
 * If username already exists, then there will be an error.
 
 
-# ========== (2) LOGIN ==========
+# ========== (2.1) LOGIN ==========
 POST /api/login
 
 Body:
@@ -36,6 +36,22 @@ What it's supposed to do:
 * If login is successful, there will be a message 'Login successful!'.
 Also, "userId" will be the user ID of this person.
 Only use "userId" after login!
+
+
+# ========== (2.2) CHANGE PASSWORD ==========
+POST /api/change-password
+
+Body:
+{
+  "username": "user123",
+  "oldPassword": "currentPass",
+  "newPassword": "newPass123"
+}
+
+What it does:
+* Verifies old password.
+* Updates to new password if correct.
+* Returns success message.
 
 
 # ========== (3) SAVE FAVOURITE BUS STOP ==========
@@ -260,6 +276,36 @@ DELETE /api/journeys/:journeyID/segments
 GET /api/journeys/:journeyID/segments
 
 
+# ========== (10) MRT STATIONS ==========
+These endpoints allow the mobile app to fetch MRT/LRT stations.
+There are also admin-only endpoints to insert or delete stations, protected by an API key.
+
+### 10.1 Get all MRT stations
+GET /api/mrt-stations
+
+---
+
+### 10.2 Insert a new MRT station (Admin only)
+POST /api/mrt-stations?key=[insert key here]
+
+Body:
+{
+  "type": "MRT",
+  "stationCode": "FS1",
+  "stationName": "FakeStation1",
+  "latitude": 3.14159,
+  "longitude": 3.14159
+}
+
+---
+
+### 10.3 Delete a MRT station by stationCode (Admin only)
+DELETE /api/mrt-stations/:stationCode?key=[insert key here]
+
+e.g. DELETE /api/mrt-stations/FS1?key=[insert key here]
+
+---
+
+
 #
 If anything breaks or doesn’t work, do let me know! :D
-
