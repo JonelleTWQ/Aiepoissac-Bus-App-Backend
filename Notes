@@ -14,3 +14,11 @@ git push origin main = "Upload my stuff to GitHub, on the 'main' branch."
 
 IMPT!!
 In MongoDB Atlas, rmb to change network access!!
+
+
+For personal copying:
+node yay.js
+
+git add .
+git commit -m "(message here)"
+git push origin main

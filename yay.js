@@ -626,7 +626,7 @@ app.get('/api/announcements', async (req, res) => {
 
 // 2. Add an announcement (Admin only)
 app.post('/api/announcements', async (req, res) => {
-  const { key } = req.query;
+  const key = req.query.key || req.headers['x-admin-key']; // can use query or header
   if (key !== process.env.ADMIN_KEY) {
     return res.status(403).json({ error: "Forbidden: Invalid admin key >:(" });
   }
@@ -647,7 +647,7 @@ app.post('/api/announcements', async (req, res) => {
 
 // 3. Delete an announcement by ID (Admin only)
 app.delete('/api/announcements/:id', async (req, res) => {
-  const { key } = req.query;
+  const key = req.query.key || req.headers['x-admin-key'];
   if (key !== process.env.ADMIN_KEY) {
     return res.status(403).json({ error: "Forbidden: Invalid admin key >:(" });
   }
@@ -661,7 +661,6 @@ app.delete('/api/announcements/:id', async (req, res) => {
     res.status(500).json({ error: "Couldn't delete announcement!" });
   }
 });
-
 
 
 ///////////////
