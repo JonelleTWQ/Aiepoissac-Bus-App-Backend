@@ -112,11 +112,16 @@ app.get('/api/mrt-stations', async (req, res) => {
 
 // 2. INSERT a new MRT station (requires ?key=DA_SECRET_KEY)
 app.post('/api/mrt/insert', async (req, res) => {
+  const key = req.query.key || req.headers['x-admin-key'];
+  if (key !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: "Forbidden: Invalid admin key >:(" });
+  }
+
   const { type, stationCode, stationName, latitude, longitude } = req.body;
 
   try {
     const station = await MRTStation.create({ type, stationCode, stationName, latitude, longitude });
-    
+
     // Update lastUpdated timestamp
     await MRTMeta.findOneAndUpdate({}, { lastUpdated: new Date() }, { upsert: true });
 
@@ -129,6 +134,11 @@ app.post('/api/mrt/insert', async (req, res) => {
 
 // 3. DELETE a MRT station by stationCode (requires ?key=DA_SECRET_KEY)
 app.delete('/api/mrt/delete/:stationCode', async (req, res) => {
+  const key = req.query.key || req.headers['x-admin-key'];
+  if (key !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: "Forbidden: Invalid admin key >:(" });
+  }
+
   try {
     const deleted = await MRTStation.findOneAndDelete({ stationCode: req.params.stationCode });
     if (!deleted) return res.status(404).json({ error: "Station not found" });
