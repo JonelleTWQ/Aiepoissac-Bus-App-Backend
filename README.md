@@ -286,7 +286,7 @@ GET /api/mrt-stations
 ---
 
 ### 10.2 Insert a new MRT station (Admin only)
-POST /api/mrt-stations?key=[insert sPeCiAl key here]
+POST /api/mrt/insert?key=[insert sPeCiAl key here]
 
 Body:
 {
@@ -300,11 +300,22 @@ Body:
 ---
 
 ### 10.3 Delete a MRT station by stationCode (Admin only)
-DELETE /api/mrt-stations/:stationCode?key=[insert sPeCiAl key here]
+DELETE /api/mrt/delete/:stationCode?key=[insert sPeCiAl key here]
 
 e.g. DELETE /api/mrt-stations/FS1?key=[insert key here]
 
 ---
+
+### 10.4 Get MRT data last updated timestamp
+GET /api/mrt/last-updated
+
+Returns:
+{
+  "lastUpdated": "2025-08-06T12:34:56.789Z"  // null if never updated
+}
+
+- This updates automatically whenever an MRT station is inserted or deleted.
+
 
 
 # ========== (11) ANNOUNCEMENTS ==========

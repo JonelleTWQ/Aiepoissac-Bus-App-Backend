@@ -97,6 +97,7 @@ app.get('/api/lta/bus-services', async (req, res) => {
 //////////////////////////
 
 const MRTStation = require('./models/MRTStation');
+const MRTMeta = require('./models/MRTMeta');
 
 // 1. GET all MRT stations
 app.get('/api/mrt-stations', async (req, res) => {
@@ -109,41 +110,49 @@ app.get('/api/mrt-stations', async (req, res) => {
   }
 });
 
-// 2. INSERT a new MRT station (requires ?key=YOUR_SECRET_KEY)
-app.post('/api/mrt-stations', async (req, res) => {
-  const apiKey = req.query.key;
-  if (apiKey !== process.env.ADMIN_KEY) {
-    return res.status(403).json({ error: 'Forbidden: Invalid API key >:(' });
-  }
-
+// 2. INSERT a new MRT station (requires ?key=DA_SECRET_KEY)
+app.post('/api/mrt/insert', async (req, res) => {
   const { type, stationCode, stationName, latitude, longitude } = req.body;
-  if (!type || !stationCode || !stationName || latitude == null || longitude == null) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
 
   try {
-    const newStation = await MRTStation.create({ type, stationCode, stationName, latitude, longitude });
-    res.json(newStation);
+    const station = await MRTStation.create({ type, stationCode, stationName, latitude, longitude });
+    
+    // Update lastUpdated timestamp
+    await MRTMeta.findOneAndUpdate({}, { lastUpdated: new Date() }, { upsert: true });
+
+    res.json(station);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Couldn't insert MRT station!" });
   }
 });
 
-// 3. DELETE a MRT station by stationCode (requires ?key=YOUR_SECRET_KEY)
-app.delete('/api/mrt-stations/:stationCode', async (req, res) => {
-  const apiKey = req.query.key;
-  if (apiKey !== process.env.ADMIN_KEY) {
-    return res.status(403).json({ error: 'Forbidden: Invalid API key >:(' });
-  }
-
+// 3. DELETE a MRT station by stationCode (requires ?key=DA_SECRET_KEY)
+app.delete('/api/mrt/delete/:stationCode', async (req, res) => {
   try {
     const deleted = await MRTStation.findOneAndDelete({ stationCode: req.params.stationCode });
-    if (!deleted) return res.status(404).json({ error: 'Station not found' });
-    res.json({ message: 'Station deleted successfully' });
+    if (!deleted) return res.status(404).json({ error: "Station not found" });
+
+    // Update lastUpdated timestamp
+    await MRTMeta.findOneAndUpdate({}, { lastUpdated: new Date() }, { upsert: true });
+
+    res.json({ message: "Station deleted", deleted });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Couldn't delete MRT station!" });
+  }
+});
+
+
+// 4. Get MRT data last updated timestamp
+app.get('/api/mrt/last-updated', async (req, res) => {
+  try {
+    const meta = await MRTMeta.findOne({});
+    if (!meta) return res.json({ lastUpdated: null });
+    res.json({ lastUpdated: meta.lastUpdated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Couldn't fetch MRT last updated timestamp!" });
   }
 });
 
